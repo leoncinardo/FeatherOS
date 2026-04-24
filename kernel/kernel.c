@@ -1,0 +1,41 @@
+
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <limine.h>
+
+#include <arch/x86_64/include/idt.h>
+
+extern void sseEnable(void); 
+
+
+__attribute__((used, section(".limine_requests"))) static volatile uint64_t limineBaseRevision[] = LIMINE_BASE_REVISION(6);
+
+__attribute__((used, section(".limine_requests_start"))) static volatile uint64_t limineRequestsStartMarker[] = LIMINE_REQUESTS_START_MARKER;
+__attribute__((used, section(".limine_requests_end"))) static volatile uint64_t limineRequestsEndMarker[] = LIMINE_REQUESTS_END_MARKER;
+
+
+static void halt() {
+    for (;;) {
+        asm volatile("hlt");
+    }
+}
+
+
+void __attribute__((section(".entry"))) kernelMain(void) {
+    // If revisions don't match we have quite a problem
+    if (LIMINE_BASE_REVISION_SUPPORTED(limineBaseRevision) == false) {
+        halt();
+    }
+
+	asm volatile("cli");
+
+	gdtInit();
+	idtInit();
+	sseEnable();
+
+	asm volatile("sti");
+
+
+    halt();
+}
