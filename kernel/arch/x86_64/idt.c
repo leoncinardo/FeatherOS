@@ -1,16 +1,53 @@
 
 #include <stdint.h>
+#include <arch/x86_64/include/gdt.h>
 #include <arch/x86_64/include/idt.h>
 
 
 __attribute__((aligned(0x10))) static idtEntry_t idt[idtEntries];
-extern void* isrStubTable[]; // This is from isr.asm
-extern void isrSetStubTable(void); // And also this
+extern void* isrStubTable[];
+extern void isrSetStubTable(void);
+
+static const char* isrExceptionsNames[] = {
+    "Division by 0",
+    "Debug exception",
+    "Non-maskable interrupt exception",
+    "Breakpoint exception",
+    "Overflow",
+    "Bound range exceeded",
+    "Invalid opcode",
+    "Device not avaiable",
+    "Double fault",
+    "Coprocessor segment overrun",
+    "Invalid TSS",
+    "Segment not present",
+    "Stack-segment fault",
+    "General protection fault",
+    "Page fault",
+    "Reserved exception",
+    "x87 floating-point exception",
+    "Alignment check",
+    "Machine check",
+    "SIMD floating-point exception",
+    "Virtualization exception",
+    "Control protection exception",
+    "Reserved exception",
+	"Reserved exception",
+	"Reserved exception",
+	"Reserved exception",
+	"Reserved exception",
+	"Reserved exception",
+    "Hypervisor injection exception",
+    "VMM communication exception",
+    "Security exception",
+    "Reserved exception"
+};
 
 
-void isrHandler(intStackFrame_t* stackFrame) {
+void isrExceptionHandler(intStackFrame_t* stackFrame) {
 	asm volatile("cli; hlt");
 
+	// TODO: implement stuff to display a message
 }
 
 

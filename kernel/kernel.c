@@ -4,9 +4,11 @@
 #include <stdbool.h>
 #include <limine.h>
 
+#include <arch/x86_64/include/gdt.h>
 #include <arch/x86_64/include/idt.h>
 #include <memory/include/memory.h>
 #include <memory/include/pmm.h>
+#include <graphics/include/screen.h>
 
 extern void sseEnable(void); 
 
@@ -36,13 +38,14 @@ void __attribute__((section(".entry"))) kernelMain(void) {
 
 	asm volatile("cli");
 
-	gdtInit();
+	screenInit();
 	sseEnable();
+	gdtInit();
 	idtInit();
 
 	asm volatile("sti");
 
-	pmmInit();
+	// pmmInit();
 
 
     halt();

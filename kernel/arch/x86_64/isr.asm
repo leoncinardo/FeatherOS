@@ -1,7 +1,7 @@
 
 CPU X64
 DEFAULT REL
-EXTERN isrHandler
+EXTERN isrExceptionHandler
 
 ; * NOTE: I asked an ai model some stuff and it recommended to initialize isrStubTable at runtime,
 ; * so I did that(yes I wrote the code by myself).
@@ -20,13 +20,13 @@ SECTION .text
 		
 		push %1 ; Interrupt index in isrStubTable
 
-		jmp isrStubCommon
+		jmp isrStubExceptionCommon
 
 %endmacro
 
 
-static isrStubCommon
-isrStubCommon:
+static isrStubExceptionCommon
+isrStubExceptionCommon:
 	pushfq
 	cld
 
@@ -38,7 +38,7 @@ isrStubCommon:
 	push r11
 
 	mov rdi, rsp ; First argument for isrHandler
-	call isrHandler
+	call isrExceptionHandler
 
 	pop r11
 	pop2p r10, r9

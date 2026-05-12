@@ -1,8 +1,6 @@
 
 #pragma once
 
-#include <arch/x86_64/include/gdt.h>
-
 #define idtEntries 256 // Entries > 256 are ignored
 
 
@@ -35,6 +33,7 @@ typedef struct {
 
 } __attribute__((packed)) idtEntry_t;
 
+
 typedef struct {
 	uint16_t size;
 	uint64_t offset;
@@ -42,5 +41,5 @@ typedef struct {
 } __attribute__((packed)) idtIdtr_t;
 
 
-void isrHandler();
+void isrExceptionHandler(intStackFrame_t* stackFrame);
 void idtInit(void);
