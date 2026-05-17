@@ -25,19 +25,20 @@ static uint32_t framebufferBpp;
 static uint32_t textPosX, textPosY = 0;
 static uint32_t screenBackgroundColour, screenForegroundColour, screenAccentColour;
 
-static va_list* klogArgPtr;
-static void (*klogSpecifiersFuncs[26])();
+static va_list* kPrintfArgPtr;
+static void (*kPrintfSpecifiersFuncs[31])();
 
 
-// -- klog and subsequent functions -- 
+// -- kPrintf and subsequent functions -- 
 
 
-int klog(const char* stringPtr, ...) {
+int kPrintf(const char* stringPtr, ...) {
 	va_list argsList;
 	va_start(argsList, stringPtr);
-	klogArgPtr = &argsList;
+	kPrintfArgPtr = &argsList;
 
 	char* curChar;
+	char specifier;
 	size_t charX, charY;
 
 	for (size_t i = 0; stringPtr[i]; i++) {
@@ -46,26 +47,45 @@ int klog(const char* stringPtr, ...) {
 			textPosY += fontCharHeight;
 		}
 
-		curChar = g_8x16_font + (stringPtr[i] * fontCharHeight);
+		curChar = font8x16 + (stringPtr[i] * fontCharHeight);
 
 		// 0x25 is "%"
 		if (stringPtr[i] == 0x25) {
-			if (!klogSpecifiersFuncs[i + 1]) continue;
 			i++;
+			specifier = stringPtr[i];
 
-			// Execute the function associated to a letter.
-			// For example "A" -> klogSpecifiersFuncs[0]()
-			if (stringPtr[i] > 0x61) {
-				// Lowercase
-				klogSpecifiersFuncs[stringPtr[i] - 0x61]();
+			if (specifier == 0x25) goto kPrintfCharPrintLoop;
+			if (specifier < 0x41 || specifier > 0x7A) continue; // If not a letter ignore it
 
-			} else {
-				// Uppercase
-				klogSpecifiersFuncs[stringPtr[i] - 0x41]();
+			// If a lowercase letter
+			if (specifier > 0x60) {
+				// Execute the function associated to a letter. Eg: "a" -> kPrintfSpecifiersFuncs[0]()
+				kPrintfSpecifiersFuncs[specifier - 0x61]();
 
+			} if (specifier < 0x5B) {
+				// I could do the same thing for uppercase letters but it would be a waste of memory for only 5 of them being used
+				switch (specifier) {
+					case 0x41: kPrintfSpecifiersFuncs[26](); break; // "A"
+					case 0x45: kPrintfSpecifiersFuncs[27](); break; // "E"
+					case 0x46: kPrintfSpecifiersFuncs[28](); break; // "F"
+					case 0x47: kPrintfSpecifiersFuncs[29](); break; // "G"
+					case 0x58: kPrintfSpecifiersFuncs[30](); break; // "X"
+
+					default: continue;
+				}
 			}
 
+		} else if (stringPtr[i] == 0x20) {
+			textPosX += fontCharWidth;
+			continue;
+		
+		} else if (stringPtr[i] == 0xA) {
+			textPosX = 0;
+			textPosY += fontCharHeight;
+			continue;
+
 		} else {
+			kPrintfCharPrintLoop:
 			for (charY = 0; charY < fontCharHeight; charY++) {
 				for (charX = 0; charX < fontCharWidth; charX++) {
 					// If a pixel is present in both curChar and the mask then display it
@@ -81,10 +101,10 @@ int klog(const char* stringPtr, ...) {
 	return 0;
 }
 
-static void klogC(void) {
-	char arg = va_arg(*klogArgPtr, char);
-	char* curChar = g_8x16_font + (arg * fontCharHeight);
-
+static void kPrintfC(void) {
+	char* arg = va_arg(*kPrintfArgPtr, char*);
+	char* curChar = font8x16 + (arg[0] * fontCharHeight);
+	
 	size_t charX, charY;
 	for (charY = 0; charY < fontCharHeight; charY++) {
 		for (charX = 0; charX < fontCharWidth; charX++) {
@@ -92,12 +112,12 @@ static void klogC(void) {
 			if (curChar[charY] & fontCharMask[charX]) framebufferPtr[(textPosX + charX) * framebufferBpp + (textPosY + charY)* framebufferPitch] = screenForegroundColour;
 		}
 	}
-
+	
 	textPosX += fontCharWidth;
 }
 
-static void klogS(void) {
-	char* arg = va_arg(*klogArgPtr, char*);
+static void kPrintfS(void) {
+	char* arg = va_arg(*kPrintfArgPtr, char*);
 	char* curChar;
 	size_t i, charX, charY;
 
@@ -109,7 +129,7 @@ static void klogS(void) {
 		}
 
 		// 8 by 16 bits = 16 bytes per char so every byte describes a row
-		curChar = g_8x16_font + (arg[i] * fontCharHeight);
+		curChar = font8x16 + (arg[i] * fontCharHeight);
 
 		for (charY = 0; charY < fontCharHeight; charY++) {
 			for (charX = 0; charX < fontCharWidth; charX++) {
@@ -122,25 +142,31 @@ static void klogS(void) {
 	}
 }
 
-static void klogPlaceholder(void) {
+static void kPrintfPlaceholder(void) {
 	return;
 }
 
 // Since the functions associated to the specifiers are defined above I can't assign them where i declared this array
-static void (*klogSpecifiersFuncs[26])() = {
-	klogPlaceholder, klogPlaceholder, klogC, klogPlaceholder, klogPlaceholder, klogPlaceholder, klogPlaceholder, klogPlaceholder,
-	klogPlaceholder, klogPlaceholder, klogPlaceholder, klogPlaceholder, klogPlaceholder, klogPlaceholder,
-	klogPlaceholder, klogPlaceholder, klogPlaceholder, klogPlaceholder, klogS, klogPlaceholder,
-	klogPlaceholder, klogPlaceholder, klogPlaceholder, klogPlaceholder, klogPlaceholder, klogPlaceholder
+static void (*kPrintfSpecifiersFuncs[31])() = {
+	kPrintfPlaceholder, kPrintfPlaceholder, kPrintfC, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder,
+	kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder,
+	kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfS, kPrintfPlaceholder,
+	kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder,
+
+	kPrintfPlaceholder, // "A"
+	kPrintfPlaceholder, // "E"
+	kPrintfPlaceholder, // "F"
+	kPrintfPlaceholder, // "G"
+	kPrintfPlaceholder // "X"
 };
 
 
-// Other text output functions
+// -- Other text output functions --
 
 
-void kprintChar(const char c, uint32_t posX, uint32_t posY) {
+void kPrintChar(const char c, uint32_t posX, uint32_t posY) {
 	size_t charX, charY = 0;
-	char* curChar = g_8x16_font + (c * fontCharHeight);
+	char* curChar = font8x16 + (c * fontCharHeight);
 
 	for (charY; charY < fontCharHeight; charY++) {
 		for (charX = 0; charX < fontCharWidth; charX++) {
@@ -152,7 +178,7 @@ void kprintChar(const char c, uint32_t posX, uint32_t posY) {
 }
 
 
-void kprint(const char* stringPtr, uint32_t posX, uint32_t posY) {
+void kPrint(const char* stringPtr, uint32_t posX, uint32_t posY) {
 	uint32_t x = posX;
 	uint32_t y = posY;
 	char* curChar;
@@ -166,7 +192,7 @@ void kprint(const char* stringPtr, uint32_t posX, uint32_t posY) {
 		}
 
 		// 8 by 16 bits = 16 bytes per char so every byte describes a row
-		curChar = g_8x16_font + (stringPtr[i] * fontCharHeight);
+		curChar = font8x16 + (stringPtr[i] * fontCharHeight);
 
 		for (charY = 0; charY < fontCharHeight; charY++) {
 			for (charX = 0; charX < fontCharWidth; charX++) {
@@ -181,7 +207,7 @@ void kprint(const char* stringPtr, uint32_t posX, uint32_t posY) {
 }
 
 
-// Functions to manage framebuffers
+// -- Functions to manage framebuffers ---
 
 
 void screenDrawRectangle(uint32_t posX, uint32_t posY, uint32_t width, uint32_t height, uint32_t colour) {
@@ -226,7 +252,7 @@ void screenInit(void) {
 
 	if (framebuffer == NULL) return;
 
-	screenBackgroundColour = 0x1A1B25;
-	screenForegroundColour = 0xFFFFFF;
-	screenAccentColour = 0x67E544;
+	screenBackgroundColour = defScreenBackgroundColour;
+	screenForegroundColour = defScreenForegroundColour;
+	screenAccentColour = defScreenAccentColour;
 }

@@ -30,6 +30,9 @@ static uint64_t pmmBitmap[4];
 static size_t pmmBitmapSize;
 
 
+// ! WARNING bad code ahead! (It's just stuff I wrote for starting out. I don't expect it to work)
+
+
 static void bitmapSetContiguos(uint64_t* memAddress, size_t nPages) {
 	uint64_t bitmapCoord = ((uint64_t)memAddress / (uint64_t)memoryPageSize);
 	size_t row = bitmapCoord / 64;

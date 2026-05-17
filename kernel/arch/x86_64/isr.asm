@@ -9,11 +9,8 @@ EXTERN isrExceptionHandler
 SECTION .text
 
 %macro setIsrInt 1
-	static isrStub%+%1
+	GLOBAL isrStub%+%1
     isrStub%+%1:
-		; * NOTE: Looks like that for System V ABI only volatile registers should be saved, those are:
-		; * rax, rcx, rdx, rsi, rdi, r8 to r11
-
 		%ifn %1 == 8 || %1 == 10 || %1 == 11 || %1 == 12 || %1 == 13 || %1 == 14 || %1 == 17 || %1 == 21 || %1 == 29 || %1 == 30
 			push 0 ; Fake error code
 		%endif
@@ -25,31 +22,41 @@ SECTION .text
 %endmacro
 
 
-static isrStubExceptionCommon
+GLOBAL isrStubExceptionCommon
 isrStubExceptionCommon:
 	pushfq
 	cld
 
-	; I just discovered the existance of push2p/pop2p
-	push2p rax, rcx
-	push2p rdx, rsi
-	push2p rdi, r8
-	push2p r9, r10
+	; * NOTE: Looks like that for System V ABI only volatile registers should be saved, those are:
+	; * rax, rcx, rdx, rsi, rdi, r8 to r11
+	; To clean this up: on new hardware that supports APX two push/pop instructions 
+	; can be replaced by push2p/pop2p. I don't care enought to check for support so I'll leave it like this
+	push rax
+	push rcx
+	push rdx
+	push rsi
+	push rdi
+	push r8
+	push r9
+	push r10
 	push r11
 
 	mov rdi, rsp ; First argument for isrHandler
 	call isrExceptionHandler
 
 	pop r11
-	pop2p r10, r9
-	pop2p r8, rdi
-	pop2p rsi, rdx
-	pop2p rcx, rax
+	pop r10
+	pop r9
+	pop r8
+	pop rdi
+	pop rsi
+	pop rdx
+	pop rcx
+	pop rax
 	popfq
 	add rsp, 16 ; Remove errror code/fake-error code and int index from stack
 	
     iretq
-
 
 
 GLOBAL isrSetStubTable
@@ -107,5 +114,4 @@ setIsrInt 31 ; Reserved
 SECTION .bss
 
 GLOBAL isrStubTable
-isrStubTable:
-    resq 32
+isrStubTable: resq 32

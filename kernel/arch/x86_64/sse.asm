@@ -1,7 +1,6 @@
 
-CPU X64, VEX
+CPU X64
 DEFAULT REL
-
 
 SECTION .text
 

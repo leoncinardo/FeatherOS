@@ -14,8 +14,8 @@ ifeq ($(filter $(ARCH), x86_64),)
 endif
 
 override IMAGENAME := featherOS-$(ARCH)
-override KERNELBUILDDIR := kernel/build
 override KERNELOUTPUT := kernel.elf
+KERNELBUILDDIR := kernel/build
 
 # Toolchain for building the 'limine' executable for the host
 HOSTCC := cc

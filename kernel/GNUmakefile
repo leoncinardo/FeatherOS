@@ -17,8 +17,6 @@ TOOLCHAINPREFIX := $(ARCH)-elf-
 
 CC := $(PREFIX)/bin/$(TOOLCHAINPREFIX)gcc
 LD := $(PREFIX)/bin/$(TOOLCHAINPREFIX)ld
-
-# Probably won't use these but I'll set them anyway
 AS := $(PREFIX)/bin/$(TOOLCHAINPREFIX)as
 AR := $(PREFIX)/bin/$(TOOLCHAINPREFIX)ar
 STRIP := $(PREFIX)/bin/$(TOOLCHAINPREFIX)strip
@@ -30,14 +28,13 @@ LDFLAGS :=
 # Name of final executable
 override OUTPUT := kernel.elf
 
-override BUILDDIR := build
-override INCLUDEDIR := include
+BUILDDIR := build
+INCLUDEDIR := include
 
 ifeq ($(ARCH), x86_64)
     NASMFLAGS := -g
 endif
 
-# Do not change these 3
 override CFLAGS += \
     -Wall \
     -Wextra \

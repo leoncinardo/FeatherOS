@@ -8,6 +8,7 @@
 #include <arch/x86_64/include/idt.h>
 #include <memory/include/memory.h>
 #include <memory/include/pmm.h>
+#include <drivers/include/serial.h>
 #include <graphics/include/screen.h>
 #include <graphics/include/print.h>
 
@@ -38,19 +39,18 @@ void __attribute__((section(".entry"))) kernelMain(void) {
     }
 
 	asm volatile("cli");
-
-	screenInit();
-	sseEnable();
 	gdtInit();
+	sseEnable();
 	idtInit();
-
 	asm volatile("sti");
+	
+	screenInit();
+	screenPaintBackground(defScreenBackgroundColour);
 
 	// pmmInit();
+	if (serialInit()) kPrintf("Failed: setup of serial ports driver\n");
 
-	screenPaintBackground(0x1A1B25);
-	screenDrawRectangle(250, 200, 300, 150, 0xFFFFFF);
-	klog("Test output: %s", "hello there");
+	kPrintf("\n -- // FeatherOS\n\n%s", "This is a test");
 
     halt();
 }
